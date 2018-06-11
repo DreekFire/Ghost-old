@@ -1,30 +1,55 @@
-#include <iostream>
-#include <fstream>
-#include <algorithm>
 #include "Matcher.h"
 
-Matcher::Matcher(std::vector<note> score, std::vector<double> transitionMat, std::vector<double> emissionMat) {
+Matcher::Matcher(std::vector<double> transitionMat, std::vector<double> emissionMat, std::vector<note> scoreMat) {
     transMat = transitionMat;
     emissMat = emissionMat;
-    Matcher::score = score;
+    score = scoreMat;
 }
 
-Matcher::~Matcher()
-{
-
+Matcher::~Matcher() {
 }
 
-int Matcher::viterbi()
-{
+int Matcher::viterbi() {
     //initialization
     for (int i = 0; i < numStates; i++) {
         delta[i] = pi[i] * emissMat[i * 12 + sequence[0]];
         psi[i] = 0;
     }
-    return 0;
+    //recursion
+    double max1 = 0;
+    double max2 = 0;
+    for (int t = 1; t < numObs; t++) {
+        for (int j = 0; j < numStates; j++) {
+            double val = delta[t*numStates + j] * mu;
+            if(val > max2) {
+                max2 = val;
+            }
+        }
+        for (int i = 0; i < numStates; i++) {
+            for (int j = currentPos - config::windowFront; j < currentPos + config::windowRear; j++) {
+                double current = delta[(t - 1) * numStates + j] * tProb(j, i);
+                if (current > max1) {
+                    psi[t * numStates + i] = j;
+                    max1 = current * emissMat[i * numStates + sequence[t]];
+                }
+            }
+            delta[t * numStates + i] = std::max(max1,max2);
+        }
+    }
+    //termination
+    double qmax = 0;
+    int q;
+    for (int i = 0; i < numStates; i++) {
+        double val = delta[numObs * numStates + i];
+        if (val > qmax) {
+            q = i;
+            qmax = val;
+        }
+    }
+    return q;
 }
 
-void Matcher::load(std::string tfile, std::string efile, std::string sfile) {
+/*void Matcher::load(std::string tfile, std::string efile, std::string sfile) {
     std::ifstream scoreLoader(sfile);
     note n;
     while (scoreLoader >> n) {
@@ -60,10 +85,16 @@ void Matcher::load(std::string tfile, std::string efile, std::string sfile) {
     emissMat = eMat;
     tin.close();
     ein.close();
-}
+}*/
 
-void Matcher::train(std::vector<note> obs)
-{
+void Matcher::train(std::vector<note> obs) {
+    std::vector<double> p = pi;
+    std::vector<double> tMat(numStates * numStates);
+    std::fill(tMat.begin(), tMat.end(), mu);
+    for (int i = 0; i < numStates; i++) {
+        std::copy(transMat.begin() + i * 5, transMat.begin() + i * 5 + 5, tMat.begin() + i * config::windowLength + i - config::windowFront);
+    }
+    std::vector<double> eMat = emissMat;
     double prevProb = 0;
     double currentProb = 0;
     int T = obs.size();
@@ -75,7 +106,7 @@ void Matcher::train(std::vector<note> obs)
         //forward-backward algorithm
         //initialization
         for (int i = 0; i < numStates; i++) {
-            alpha[i] = pi[i] * emissMat[numStates*i + obs[0]];
+            alpha[i] = p[i] * eMat[numStates*i + obs[0]];
             beta[(T - 1) * numStates + i] = 1;
         }
         //calculate alpha by recursion
@@ -83,9 +114,9 @@ void Matcher::train(std::vector<note> obs)
             for (int i = 0; i < numStates; i++) {
                 double sum = 0;
                 for (int j = 0; j < numStates; j++) {
-                    sum += alpha[(t - 1) * numStates + j] * transMat[j * numStates + i];
+                    sum += alpha[(t - 1) * numStates + j] * tMat[j * numStates + i];
                 }
-                sum *= emissMat[i * config::numEmiss + obs[t]];
+                sum *= eMat[i * config::numEmiss + obs[t]];
                 alpha[t * numStates + i] = sum;
             }
         }
@@ -94,7 +125,7 @@ void Matcher::train(std::vector<note> obs)
             for (int i = 0; i < numStates; i++) {
                 double sum = 0;
                 for (int j = 0; j < numStates; j++) {
-                    sum += emissMat[j * config::numEmiss + obs[t + 1]] * transMat[i * numStates + j] * beta[(t + 1) * numStates + j];
+                    sum += eMat[j * config::numEmiss + obs[t + 1]] * tMat[i * numStates + j] * beta[(t + 1) * numStates + j];
                 }
                 beta[t*numStates + i] = sum;
             }
@@ -113,15 +144,15 @@ void Matcher::train(std::vector<note> obs)
                     for (int a = 0; a < numStates; a++) {
                         for (int b = 0; b < numStates; b++) {
                             sum += alpha[t * numStates + a] *
-                                transMat[a * numStates + b] *
-                                emissMat[b * numStates + obs[t + 1]] *
+                                tMat[a * numStates + b] *
+                                eMat[b * numStates + obs[t + 1]] *
                                 beta[(t + 1) * numStates + j];
                         }
                     }
                     xi[t * numStates * numStates + i * numStates + j] =
                         alpha[t * numStates + i] *
-                        transMat[i * numStates + j] *
-                        emissMat[j * numStates + obs[t + 1]] *
+                        tMat[i * numStates + j] *
+                        eMat[j * numStates + obs[t + 1]] *
                         beta[(t + 1) * numStates + j] / sum;
                 }
             }
@@ -132,8 +163,8 @@ void Matcher::train(std::vector<note> obs)
                 for (int j = 0; j < numStates; j++) {
                     xi[t * numStates * numStates + i * numStates + j] =
                         alpha[t * numStates + i] *
-                        transMat[i * numStates + j] *
-                        emissMat[j * numStates + obs[t + 1]] *
+                        tMat[i * numStates + j] *
+                        eMat[j * numStates + obs[t + 1]] *
                         beta[(t + 1) * numStates + j] / currentProb;
                 }
             }
@@ -159,9 +190,9 @@ void Matcher::train(std::vector<note> obs)
         }
         //update
         for (int i = 0; i < numStates; i++) {
-            //update pi
-            pi[i] = gamma[i];
-            //update transMat (A)
+            //update p
+            p[i] = gamma[i];
+            //update tMat (A)
             for (int j = 0; j < numStates; j++) {
                 double num = 0;
                 double den = 0;
@@ -169,9 +200,9 @@ void Matcher::train(std::vector<note> obs)
                     num += xi[t * numStates * numStates + i * numStates + j];
                     den += gamma[t * numStates + i];
                 }
-                transMat[i * numStates + j] = num / den;
+                tMat[i * numStates + j] = num / den;
             }
-            //update emissMat (B)
+            //update eMat (B)
             for (int k = 0; k < config::numEmiss; k++) {
                 double num = 0;
                 double den = 0;
@@ -180,8 +211,20 @@ void Matcher::train(std::vector<note> obs)
                     num += (obs[t] == k) * val;
                     den += val;
                 }
-                emissMat[i * config::numEmiss + k] = num / den;
+                eMat[i * config::numEmiss + k] = num / den;
             }
         }
     } while (prevProb - currentProb > config::trainThresh);
+    save(saveFile, p, tMat, eMat);
+}
+
+void save(std::string file, std::vector<double> pi, std::vector<double> tMat, std::vector<double> eMat) {
+    //todo
+}
+
+double Matcher::tProb(int y, int x) {
+    if (x > y - config::windowFront && y < y + config::windowRear) {
+        return y * config::windowLength + x - y;
+    }
+    return mu;
 }
