@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{283198C9-F478-405B-BEFF-D71E05084383}</ProjectGuid>
     <RootNamespace>CompAccomp</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.10586.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -74,6 +74,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\TheCriticalBrit\Desktop\CODing\music programming\tsf;C:\Users\TheCriticalBrit\Desktop\CODing\music programming\essentia\src;C:\Users\TheCriticalBrit\Desktop\CODing\music programming\libsoundio\soundio</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -113,19 +114,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Instructor.cpp" />
     <ClCompile Include="Listener.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Matcher.cpp" />
     <ClCompile Include="Player.cpp" />
-    <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Visualizer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Instructor.h" />
     <ClInclude Include="Listener.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Matcher.h" />
     <ClInclude Include="Player.h" />
-    <ClInclude Include="Timer.h" />
     <ClInclude Include="Visualizer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -9,6 +9,22 @@ Matcher::Matcher(std::vector<double> transitionMat, std::vector<double> emission
 Matcher::~Matcher() {
 }
 
+void Matcher::update(note o) {
+    auto currentTime = timer.now();
+    sequence.push_back(o);
+    int newPos = viterbi();
+    if (newPos == currentPos + 2) {
+        if (score[newPos] != score[currentPos]) {
+            msPerTick = 2 * std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - noteStartTime).count() / (newPos - noteStartPos);
+            noteStartTime = currentTime;
+        }
+    }
+    else {
+        noteStartTime = currentTime;
+    }
+    noteStartPos = currentPos;
+}
+
 int Matcher::viterbi() {
     //initialization
     for (int i = 0; i < numStates; i++) {
@@ -49,7 +65,7 @@ int Matcher::viterbi() {
     return q;
 }
 
-/*void Matcher::load(std::string tfile, std::string efile, std::string sfile) {
+/*void Matcher::loadText(std::string tfile, std::string efile, std::string sfile) {
     std::ifstream scoreLoader(sfile);
     note n;
     while (scoreLoader >> n) {
@@ -218,13 +234,39 @@ void Matcher::train(std::vector<note> obs) {
     save(saveFile, p, tMat, eMat);
 }
 
-void save(std::string file, std::vector<double> pi, std::vector<double> tMat, std::vector<double> eMat) {
+void Matcher::save(std::string file, std::vector<double> pi, std::vector<double> tMat, std::vector<double> eMat) {
     //todo
 }
 
-double Matcher::tProb(int y, int x) {
+double Matcher::tProb(int state1, int state2) {
     if (x > y - config::windowFront && y < y + config::windowRear) {
         return y * config::windowLength + x - y;
     }
     return mu;
+}
+
+double Matcher::eProb(int state, int emiss) {
+    if (state % 2 == 0) {
+        for (int i = 0; i < 6; i++) {
+            if (score[state / 2] & (_rotl16(1, emiss + i)) || score[state / 2] & (_rotl16(1, emiss - i))) {
+                return gaussian[i];
+            }
+        }
+    }
+    else {
+        return 1.0 / 12;
+    }
+}
+
+double Matcher::calcMu(std::vector<double> tMat, int N) {
+    double sum = 0;
+    int tLeft = std::min(N, config::windowFront);
+    int tRight = std::min(N, config::windowRear);
+    int count = (tLeft * (tLeft + 1)) / 2 + (tRight * (tRight + 1)) / 2;
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            sum += tMat[i*N + j] * (j < i - config::windowFront || j > i + config::windowRear);
+        }
+    }
+    return sum / count;
 }
