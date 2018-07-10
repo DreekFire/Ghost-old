@@ -30,6 +30,22 @@ Listener::Listener() {
     const int ring_buffer_duration_seconds = 30;
     int capacity = ring_buffer_duration_seconds * instream->sample_rate * instream->bytes_per_frame;
     rc->ring_buffer = soundio_ring_buffer_create(sio, capacity);
+    for (;;) {
+        soundio_flush_events(soundio);
+        sleep(1);
+        int fill_bytes = soundio_ring_buffer_fill_count(rc.ring_buffer);
+        char *read_buf = soundio_ring_buffer_read_ptr(rc.ring_buffer);
+        size_t amt = fwrite(read_buf, 1, fill_bytes, out_f);
+        if ((int)amt != fill_bytes) {
+            fprintf(stderr, "write error: %s\n", strerror(errno));
+            return 1;
+        }
+        soundio_ring_buffer_advance_read_ptr(rc.ring_buffer, fill_bytes);
+    }
+    soundio_instream_destroy(instream);
+    soundio_device_unref(selected_device);
+    soundio_destroy(soundio);
+    return 0;
 }
 
 //copied code

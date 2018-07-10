@@ -1,5 +1,5 @@
 #pragma once
-#include "essentia/algorithmfactory.h"
+#include "algorithmfactory.h"
 #include "soundio.h"
 
 typedef uint16_t note;
