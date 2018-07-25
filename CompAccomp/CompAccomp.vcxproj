@@ -74,7 +74,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\TheCriticalBrit\Desktop\CODing\music programming\tsf;C:\Users\TheCriticalBrit\Desktop\CODing\music programming\essentia\src;C:\Users\TheCriticalBrit\Desktop\CODing\music programming\libsoundio\soundio</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\TheCriticalBrit\Desktop\CODing\music programming\tsf;C:\Users\TheCriticalBrit\Desktop\CODing\music programming\essentia\src;C:\Users\TheCriticalBrit\Desktop\CODing\music programming\libsoundio\soundio;C:\Users\TheCriticalBrit\Desktop\CODing\music programming\essentia\packaging\win32_3rdparty\libav-0.8.9\include\libavformat;C:\Users\TheCriticalBrit\Desktop\CODing\music programming\essentia\packaging\win32_3rdparty\libav-0.8.9\include\libavfilter;C:\Users\TheCriticalBrit\Desktop\CODing\music programming\essentia\packaging\win32_3rdparty\libav-0.8.9\include\libavcodec;C:\Users\TheCriticalBrit\Desktop\CODing\music programming\essentia\packaging\win32_3rdparty\libav-0.8.9\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

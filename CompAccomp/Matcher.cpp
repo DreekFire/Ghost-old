@@ -239,13 +239,13 @@ void Matcher::save(std::string file, std::vector<double> pi, std::vector<double>
 }
 
 double Matcher::tProb(int state1, int state2) {
-    if (x > y - config::windowFront && y < y + config::windowRear) {
-        return y * config::windowLength + x - y;
+    if (state1 > state2 - config::windowFront && state1 < state2 + config::windowRear) {
+        return transMat[state2 * config::windowLength + state1 - state2];
     }
     return mu;
 }
 
-double Matcher::eProb(int state, int emiss) {
+double Matcher::eProb(int state, int emiss) { //WIP
     if (state % 2 == 0) {
         for (int i = 0; i < 6; i++) {
             if (score[state / 2] & (_rotl16(1, emiss + i)) || score[state / 2] & (_rotl16(1, emiss - i))) {
